@@ -11,12 +11,13 @@ st.title("UPI Fraud Detection App")
 @st.cache_resource  # Cache for better performance
 def load_models_and_scaler():
     model_paths = {
-        "XGBoost": r'C:\Users\91996\Desktop\SEM 8\MAIN PROJECT\CODES\2xgboost.pkl',
-        "Decision Tree": r'C:\Users\91996\Desktop\SEM 8\MAIN PROJECT\CODES\2decisionTree.pkl',
-        "Random Forest": r'C:\Users\91996\Desktop\SEM 8\MAIN PROJECT\CODES\2RandForest.pkl',
-        "Gradient Boosting": r'C:\Users\91996\Desktop\SEM 8\MAIN PROJECT\CODES\2GradientBoosting.pkl'
+    "XGBoost": "models/2xgboost.pkl",
+    "Decision Tree": "models/2decisionTree.pkl",
+    "Random Forest": "models/2RandForest.pkl",
+    "Gradient Boosting": "models/2GradientBoosting.pkl"
     }
-    scaler_path = r'C:\Users\91996\Desktop\SEM 8\MAIN PROJECT\CODES\scalerUnd.pkl'
+    scaler_path = "models/scalerUnd.pkl"
+
 
     models = {}
     if os.path.exists(scaler_path):
