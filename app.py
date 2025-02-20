@@ -5,7 +5,7 @@ import pandas as pd
 import os
 
 # Title of the app
-st.title("UPI Fraud Detection App")
+st.title("UPI Fraud Detection")
 
 # Load the models and scaler
 @st.cache_resource  # Cache for better performance
