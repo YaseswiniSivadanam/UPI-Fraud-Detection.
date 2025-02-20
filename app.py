@@ -110,7 +110,8 @@ elif selected == "Batch Prediction":
     st.subheader("Upload a CSV File for Batch Predictions")
     
     uploaded_file = st.file_uploader("Choose a CSV file", type=["csv"])
-    
+    print("Models:", models)
+
     model_choice = st.selectbox("Choose a Model", list(models.keys()), index=0)
 
     if uploaded_file is not None:
