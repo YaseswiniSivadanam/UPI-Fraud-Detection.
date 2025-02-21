@@ -68,11 +68,11 @@ if selected == "Single Prediction":
     with col1:
         transaction_type = st.selectbox("Type", list(transaction_types.keys()))
         amount = st.number_input("Amount", min_value=0.0, value=181.0)
-        oldbalanceOrg = st.number_input("Old Balance Org", min_value=0.0, value=181.0)
+        oldbalanceOrg = st.number_input("Sender Balance Before", min_value=0.0, value=181.0)
     
     with col2:
-        oldbalanceDest = st.number_input("Old Balance Dest", min_value=0.0, value=0.0)
-        newbalanceDest = st.number_input("New Balance Dest", min_value=0.0, value=0.0)
+        oldbalanceDest = st.number_input("Reciever Balance Before", min_value=0.0, value=0.0)
+        newbalanceDest = st.number_input("Reciever Balance After", min_value=0.0, value=0.0)
     
     # Create a DataFrame from user input
     input_data = {
