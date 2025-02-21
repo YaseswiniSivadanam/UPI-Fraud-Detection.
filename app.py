@@ -3,21 +3,23 @@ from streamlit_option_menu import option_menu
 import pickle
 import pandas as pd
 import os
+import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_curve, auc
+import json
 
 # Title of the app
-st.title("UPI Fraud Detection App")
+st.title("UPI Fraud Detection")
 
 # Load the models and scaler
 @st.cache_resource  # Cache for better performance
 def load_models_and_scaler():
     model_paths = {
-    "XGBoost": "models/2xgboost.pkl",
-    "Decision Tree": "models/2decisionTree.pkl",
-    "Random Forest": "models/2RandForest.pkl",
-    "Gradient Boosting": "models/2GradientBoosting.pkl"
+        "XGBoost": "models/2xgboost.pkl",
+        "Decision Tree": "models/2decisionTree.pkl",
+        "Random Forest": "models/2RandForest.pkl",
+        "Gradient Boosting": "models/2GradientBoosting.pkl"
     }
     scaler_path = "models/scalerUnd.pkl"
-
 
     models = {}
     if os.path.exists(scaler_path):
@@ -50,7 +52,7 @@ transaction_types = {
 # Horizontal navigation menu
 selected = option_menu(
     menu_title=None,
-    options=[ "Batch Prediction", "Single Prediction"],
+    options=["Batch Prediction", "Single Prediction", "Model Performance"],
     default_index=0,
     orientation="horizontal",
 )
@@ -87,10 +89,6 @@ if selected == "Single Prediction":
 
     input_df = pd.DataFrame([input_data])
     
-    # Display user input
-    # st.subheader("User Input")
-    # st.write(input_df)
-
     # Make a prediction
     if models and scaler:
         input_data_scaled = scaler.transform(input_df)
@@ -111,7 +109,6 @@ elif selected == "Batch Prediction":
     st.subheader("Upload a CSV File for Batch Predictions")
     
     uploaded_file = st.file_uploader("Choose a CSV file", type=["csv"])
-    print("Models:", models)
 
     model_choice = st.selectbox("Choose a Model", list(models.keys()), index=0)
 
@@ -140,3 +137,115 @@ elif selected == "Batch Prediction":
             )
         else:
             st.error(f"The uploaded file must contain the following columns: {required_columns}")
+
+# # Model Performance Page
+# elif selected == "Model Performance":
+#     st.header("Model Performance")
+    
+#     model_choice = st.selectbox("Choose a Model", list(models.keys()), index=0)
+    
+#     # Load test data (assuming you have a test dataset)
+#     test_data_path = "data/data.csv"  # Update with your test data path
+#     if os.path.exists(test_data_path):
+#         test_data = pd.read_csv(test_data_path)
+#         required_columns = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest', 'isFlaggedFraud']
+        
+#         if all(column in test_data.columns for column in required_columns):
+#             type_mapping = {'PAYMENT': 3, 'TRANSFER': 4, 'CASH_OUT': 1, 'DEBIT': 2, 'CASH_IN': 0}
+#             test_data['type'] = test_data['type'].map(type_mapping)
+#             X_test = test_data[required_columns]
+#             y_test = test_data['isFlaggedFraud']
+            
+#             X_test_scaled = scaler.transform(X_test)
+#             y_pred = models[model_choice].predict(X_test_scaled)
+#             y_pred_proba = models[model_choice].predict_proba(X_test_scaled)[:, 1]
+            
+#             # Calculate evaluation metrics
+#             accuracy = accuracy_score(y_test, y_pred)
+#             precision = precision_score(y_test, y_pred)
+#             recall = recall_score(y_test, y_pred)
+#             f1 = f1_score(y_test, y_pred)
+            
+#             st.subheader("Evaluation Metrics")
+#             st.write(f"Accuracy: {accuracy:.2f}")
+#             st.write(f"Precision: {precision:.2f}")
+#             st.write(f"Recall: {recall:.2f}")
+#             st.write(f"F1-Score: {f1:.2f}")
+            
+#             # Confusion Matrix
+#             st.subheader("Confusion Matrix")
+#             cm = confusion_matrix(y_test, y_pred)
+#             fig, ax = plt.subplots()
+#             ax.matshow(cm, cmap=plt.cm.Blues, alpha=0.3)
+#             for i in range(cm.shape[0]):
+#                 for j in range(cm.shape[1]):
+#                     ax.text(x=j, y=i, s=cm[i, j], va='center', ha='center')
+#             plt.xlabel('Predicted')
+#             plt.ylabel('Actual')
+#             st.pyplot(fig)
+            
+#             # ROC Curve
+#             st.subheader("ROC Curve")
+#             fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
+#             roc_auc = auc(fpr, tpr)
+#             fig, ax = plt.subplots()
+#             ax.plot(fpr, tpr, label=f'ROC curve (area = {roc_auc:.2f})')
+#             ax.plot([0, 1], [0, 1], 'k--')
+#             plt.xlabel('False Positive Rate')
+#             plt.ylabel('True Positive Rate')
+#             plt.title('Receiver Operating Characteristic')
+#             plt.legend(loc="lower right")
+#             st.pyplot(fig)
+            
+#         else:
+#             st.error(f"The test data must contain the following columns: {required_columns}")
+#     else:
+#         st.error("Test data file not found. Please check the file path.")
+
+
+
+elif selected == "Model Performance":
+    st.header("Model Performance")
+    
+    # Load precomputed metrics
+    with open("model_metrics.json", "r") as f:
+        model_metrics = json.load(f)
+    
+    # Dropdown to select a model
+    model_choice = st.selectbox("Choose a Model", list(model_metrics.keys()), index=0)
+    
+    # Retrieve metrics for the selected model
+    metrics = model_metrics[model_choice]
+    
+    # Display Evaluation Metrics
+    st.subheader("Evaluation Metrics")
+    st.write(f"Accuracy: {metrics['accuracy']:.2f}")
+    st.write(f"Precision: {metrics['precision']:.2f}")
+    st.write(f"Recall: {metrics['recall']:.2f}")
+    st.write(f"F1-Score: {metrics['f1']:.2f}")
+    
+    # Confusion Matrix
+    st.subheader("Confusion Matrix")
+    cm = metrics['confusion_matrix']
+    fig, ax = plt.subplots()
+    ax.matshow(cm, cmap=plt.cm.Blues, alpha=0.3)
+    for i in range(len(cm)):
+        for j in range(len(cm[i])): 
+            ax.text(x=j, y=i, s=cm[i][j], va='center', ha='center')
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    st.pyplot(fig)
+    
+    # ROC Curve
+    st.subheader("ROC Curve")
+    fpr = metrics['roc_curve']['fpr']
+    tpr = metrics['roc_curve']['tpr']
+    roc_auc = metrics['roc_curve']['roc_auc']
+    fig, ax = plt.subplots()
+    ax.plot(fpr, tpr, label=f'ROC curve (area = {roc_auc:.2f})')
+    ax.plot([0, 1], [0, 1], 'k--')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic')
+    plt.legend(loc="lower right")
+    st.pyplot(fig)
