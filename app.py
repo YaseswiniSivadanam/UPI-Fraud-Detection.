@@ -56,7 +56,6 @@ selected = option_menu(
     default_index=0,
     orientation="horizontal",
 )
-
 # Single Prediction Page
 if selected == "Single Prediction":
     st.header("Single Transaction Prediction")
@@ -89,8 +88,35 @@ if selected == "Single Prediction":
 
     input_df = pd.DataFrame([input_data])
     
-    # Make a prediction
-    if models and scaler:
+    # Define fraud conditions
+    is_fraud = False
+    fraud_reason = ""
+
+    # Case 1: If transaction type is payment and amount is greater than sender's balance
+    if transaction_type == "PAYMENT" and amount > oldbalanceOrg:
+        is_fraud = True
+        fraud_reason = "Transaction amount exceeds sender's balance."
+
+    # Case 2: If receiver's balance after transaction is less than before transaction
+    if newbalanceDest < oldbalanceDest:
+        is_fraud = True
+        fraud_reason = "Receiver's balance after transaction is less than before."
+
+    # Case 3: If sender's balance after transaction is negative
+    if input_data['newbalanceOrig'] < 0:
+        is_fraud = True
+        fraud_reason = "Sender's balance after transaction is negative."
+
+    # Case 4: If the amount is unusually high (e.g., greater than a threshold)
+    if amount > 1000000:  # Example threshold
+        is_fraud = True
+        fraud_reason = "Transaction amount is unusually high."
+
+    # Make a prediction or use fraud conditions
+    if is_fraud:
+        st.subheader("Prediction")
+        st.error(f"The transaction is **fraudulent** with a probability of 1.0")
+    elif models and scaler:
         input_data_scaled = scaler.transform(input_df)
         prediction = models["XGBoost"].predict(input_data_scaled)[0]
         prediction_prob = models["XGBoost"].predict_proba(input_data_scaled)[0][1]
@@ -137,72 +163,6 @@ elif selected == "Batch Prediction":
             )
         else:
             st.error(f"The uploaded file must contain the following columns: {required_columns}")
-
-# # Model Performance Page
-# elif selected == "Model Performance":
-#     st.header("Model Performance")
-    
-#     model_choice = st.selectbox("Choose a Model", list(models.keys()), index=0)
-    
-#     # Load test data (assuming you have a test dataset)
-#     test_data_path = "data/data.csv"  # Update with your test data path
-#     if os.path.exists(test_data_path):
-#         test_data = pd.read_csv(test_data_path)
-#         required_columns = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest', 'isFlaggedFraud']
-        
-#         if all(column in test_data.columns for column in required_columns):
-#             type_mapping = {'PAYMENT': 3, 'TRANSFER': 4, 'CASH_OUT': 1, 'DEBIT': 2, 'CASH_IN': 0}
-#             test_data['type'] = test_data['type'].map(type_mapping)
-#             X_test = test_data[required_columns]
-#             y_test = test_data['isFlaggedFraud']
-            
-#             X_test_scaled = scaler.transform(X_test)
-#             y_pred = models[model_choice].predict(X_test_scaled)
-#             y_pred_proba = models[model_choice].predict_proba(X_test_scaled)[:, 1]
-            
-#             # Calculate evaluation metrics
-#             accuracy = accuracy_score(y_test, y_pred)
-#             precision = precision_score(y_test, y_pred)
-#             recall = recall_score(y_test, y_pred)
-#             f1 = f1_score(y_test, y_pred)
-            
-#             st.subheader("Evaluation Metrics")
-#             st.write(f"Accuracy: {accuracy:.2f}")
-#             st.write(f"Precision: {precision:.2f}")
-#             st.write(f"Recall: {recall:.2f}")
-#             st.write(f"F1-Score: {f1:.2f}")
-            
-#             # Confusion Matrix
-#             st.subheader("Confusion Matrix")
-#             cm = confusion_matrix(y_test, y_pred)
-#             fig, ax = plt.subplots()
-#             ax.matshow(cm, cmap=plt.cm.Blues, alpha=0.3)
-#             for i in range(cm.shape[0]):
-#                 for j in range(cm.shape[1]):
-#                     ax.text(x=j, y=i, s=cm[i, j], va='center', ha='center')
-#             plt.xlabel('Predicted')
-#             plt.ylabel('Actual')
-#             st.pyplot(fig)
-            
-#             # ROC Curve
-#             st.subheader("ROC Curve")
-#             fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
-#             roc_auc = auc(fpr, tpr)
-#             fig, ax = plt.subplots()
-#             ax.plot(fpr, tpr, label=f'ROC curve (area = {roc_auc:.2f})')
-#             ax.plot([0, 1], [0, 1], 'k--')
-#             plt.xlabel('False Positive Rate')
-#             plt.ylabel('True Positive Rate')
-#             plt.title('Receiver Operating Characteristic')
-#             plt.legend(loc="lower right")
-#             st.pyplot(fig)
-            
-#         else:
-#             st.error(f"The test data must contain the following columns: {required_columns}")
-#     else:
-#         st.error("Test data file not found. Please check the file path.")
-
-
 
 elif selected == "Model Performance":
     st.header("Model Performance")
