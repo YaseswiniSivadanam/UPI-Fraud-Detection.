@@ -93,7 +93,7 @@ if selected == "Single Prediction":
     fraud_reason = ""
 
     # Case 1: If transaction type is payment and amount is greater than sender's balance
-    if transaction_type == "PAYMENT" and amount > oldbalanceOrg:
+    if amount > oldbalanceOrg:
         is_fraud = True
         fraud_reason = "Transaction amount exceeds sender's balance."
 
